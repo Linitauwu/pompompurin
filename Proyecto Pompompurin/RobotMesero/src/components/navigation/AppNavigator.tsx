@@ -1,8 +1,5 @@
-import React from 'react';
-import {
-  NavigationContainer,
-  useNavigationState,
-} from '@react-navigation/native';
+import React, { useState } from 'react';
+import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 
 import LoginScreen from '../screens/LoginScreen';
@@ -13,16 +10,19 @@ import CartIsland from '../CartIsland';
 
 const Stack = createStackNavigator();
 
-function AppNavigatorContent() {
-  const currentRouteName = useNavigationState(state =>
-    state.routes[state.index]?.name
-  );
+function AppNavigator() {
+  const [currentRouteName, setCurrentRouteName] = useState('Login');
 
   const mostrarIsla =
     currentRouteName !== 'Login' && currentRouteName !== 'Cocina';
 
   return (
-    <>
+    <NavigationContainer
+      onStateChange={state => {
+        const route = state?.routes[state.index];
+        setCurrentRouteName(route?.name ?? 'Login');
+      }}
+    >
       <Stack.Navigator
         initialRouteName="Login"
         screenOptions={{
@@ -36,14 +36,6 @@ function AppNavigatorContent() {
       </Stack.Navigator>
 
       {mostrarIsla && <CartIsland />}
-    </>
-  );
-}
-
-function AppNavigator() {
-  return (
-    <NavigationContainer>
-      <AppNavigatorContent />
     </NavigationContainer>
   );
 }
