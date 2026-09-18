@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 
@@ -17,26 +18,26 @@ function AppNavigator() {
     currentRouteName !== 'Login' && currentRouteName !== 'Cocina';
 
   return (
-    <NavigationContainer
-      onStateChange={state => {
-        const route = state?.routes[state.index];
-        setCurrentRouteName(route?.name ?? 'Login');
-      }}
-    >
-      <Stack.Navigator
-        initialRouteName="Login"
-        screenOptions={{
-          headerShown: false,
+    <View style={{ flex: 1 }}>
+      <NavigationContainer
+        onStateChange={state => {
+          const route = state?.routes[state.index];
+          setCurrentRouteName(route?.name ?? 'Login');
         }}
       >
-        <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="Menu" component={MenuScreen} />
-        <Stack.Screen name="Categoria" component={CategoriaScreen} />
-        <Stack.Screen name="Cocina" component={CocinaScreen} />
-      </Stack.Navigator>
+        <Stack.Navigator
+          initialRouteName="Login"
+          screenOptions={{ headerShown: false }}
+        >
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="Menu" component={MenuScreen} />
+          <Stack.Screen name="Categoria" component={CategoriaScreen} />
+          <Stack.Screen name="Cocina" component={CocinaScreen} />
+        </Stack.Navigator>
+      </NavigationContainer>
 
       {mostrarIsla && <CartIsland />}
-    </NavigationContainer>
+    </View>
   );
 }
 
