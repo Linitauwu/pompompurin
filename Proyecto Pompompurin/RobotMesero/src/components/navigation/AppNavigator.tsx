@@ -36,7 +36,7 @@ function AppNavigator() {
         </Stack.Navigator>
       </NavigationContainer>
 
-      {mostrarIsla && <CartIsland />}
+      {mostrarIsla ? <CartIsland /> : null}
     </View>
   );
 }
