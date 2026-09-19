@@ -11,6 +11,7 @@ import {
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { productos } from '../data/productos';
 import { useCart } from '../context/CartContext';
+import CartIsland from '../CartIsland';
 
 const pompompurin = require('../assets/gifs/pompompurin.webp');
 const pompompurin2 = require('../assets/gifs/pom-pom-purin-pompompurin.webp');
@@ -21,46 +22,11 @@ const pompompurinExtra = require('../assets/gifs/descarga (44).png');
 type Categoria = 'comida' | 'bebidas' | 'postres' | 'entradas';
 type Filtro = 'todos' | 'ramen' | 'sushi' | 'dumplings' | 'platos_fuertes' | 'extras' | 'sin_alcohol' | 'alcohol';
 
-type RouteParams = {
-  categoria?: Categoria;
-};
-
-const configuracion: Record<Categoria, {
-  titulo: string;
-  busqueda: string;
-  filtros: { valor: Filtro; texto: string }[];
-}> = {
-  comida: {
-    titulo: 'COMIDA',
-    busqueda: 'Buscar comida...',
-    filtros: [
-      { valor: 'todos', texto: 'Todos' },
-      { valor: 'ramen', texto: 'Ramen' },
-      { valor: 'sushi', texto: 'Sushi' },
-      { valor: 'dumplings', texto: 'Dumplings' },
-      { valor: 'platos_fuertes', texto: 'Platos fuertes' },
-      { valor: 'extras', texto: 'Extras' },
-    ],
-  },
-  bebidas: {
-    titulo: 'BEBIDAS',
-    busqueda: 'Buscar bebida...',
-    filtros: [
-      { valor: 'todos', texto: 'Todas' },
-      { valor: 'sin_alcohol', texto: 'Sin alcohol' },
-      { valor: 'alcohol', texto: 'Con alcohol' },
-    ],
-  },
-  postres: {
-    titulo: 'POSTRES',
-    busqueda: 'Buscar postre...',
-    filtros: [{ valor: 'todos', texto: 'Todos' }],
-  },
-  entradas: {
-    titulo: 'ENTRADAS',
-    busqueda: 'Buscar entrada...',
-    filtros: [{ valor: 'todos', texto: 'Todas' }],
-  },
+const configuracion: Record<Categoria, { titulo: string; busqueda: string; filtros: { valor: Filtro; texto: string }[] }> = {
+  comida: { titulo: 'COMIDA', busqueda: 'Buscar comida...', filtros: [{ valor: 'todos', texto: 'Todos' }, { valor: 'ramen', texto: 'Ramen' }, { valor: 'sushi', texto: 'Sushi' }, { valor: 'dumplings', texto: 'Dumplings' }, { valor: 'platos_fuertes', texto: 'Platos fuertes' }, { valor: 'extras', texto: 'Extras' }] },
+  bebidas: { titulo: 'BEBIDAS', busqueda: 'Buscar bebida...', filtros: [{ valor: 'todos', texto: 'Todas' }, { valor: 'sin_alcohol', texto: 'Sin alcohol' }, { valor: 'alcohol', texto: 'Con alcohol' }] },
+  postres: { titulo: 'POSTRES', busqueda: 'Buscar postre...', filtros: [{ valor: 'todos', texto: 'Todos' }] },
+  entradas: { titulo: 'ENTRADAS', busqueda: 'Buscar entrada...', filtros: [{ valor: 'todos', texto: 'Todas' }] },
 };
 
 function CategoriaScreen() {
@@ -76,23 +42,9 @@ function CategoriaScreen() {
   const productosDeCategoria = useMemo(() => productos.filter(producto => {
     const coincideCategoria = producto.categoria === categoria;
     const coincideBusqueda = producto.nombre.toLowerCase().includes(busqueda.toLowerCase());
-    const coincideFiltro = filtro === 'todos'
-      || producto.tipo === filtro
-      || producto.subcategoria === filtro;
+    const coincideFiltro = filtro === 'todos' || producto.tipo === filtro || producto.subcategoria === filtro;
     return coincideCategoria && coincideBusqueda && coincideFiltro;
   }), [categoria, busqueda, filtro]);
-
-  const cambiarCategoria = (nuevaCategoria: Categoria) => {
-    setBusqueda('');
-    setFiltro('todos');
-    navigation.navigate('Categoria', { categoria: nuevaCategoria });
-  };
-
-  const cambiarFavorito = (productoId: number) => {
-    setFavoritos(prev => prev.includes(productoId)
-      ? prev.filter(id => id !== productoId)
-      : [...prev, productoId]);
-  };
 
   const opcionesSidebar: { categoria?: Categoria; texto: string; imagen: any }[] = [
     { texto: 'Inicio', imagen: pompompurinHome },
@@ -109,22 +61,18 @@ function CategoriaScreen() {
           <Image source={pompompurin} style={styles.logoImage} />
           <Text style={styles.logoText}>POMPOMPURIN</Text>
         </View>
-
         {opcionesSidebar.map(opcion => {
-          const esInicio = !opcion.categoria;
           const activo = opcion.categoria === categoria;
           return (
             <Pressable
               key={opcion.texto}
               style={[styles.sidebarButton, activo && styles.sidebarButtonActive]}
-              onPress={() => esInicio
-                ? navigation.navigate('Menu')
-                : cambiarCategoria(opcion.categoria as Categoria)}
+              onPress={() => opcion.categoria
+                ? (setBusqueda(''), setFiltro('todos'), navigation.navigate('Categoria', { categoria: opcion.categoria }))
+                : navigation.navigate('Menu')}
             >
               <Image source={opcion.imagen} style={styles.sidebarImage} />
-              <Text style={[styles.sidebarText, activo && styles.sidebarTextActive]}>
-                {opcion.texto}
-              </Text>
+              <Text style={[styles.sidebarText, activo && styles.sidebarTextActive]}>{opcion.texto}</Text>
             </Pressable>
           );
         })}
@@ -141,25 +89,13 @@ function CategoriaScreen() {
 
         <View style={styles.searchContainer}>
           <Text style={styles.searchIcon}>🔍</Text>
-          <TextInput
-            value={busqueda}
-            onChangeText={setBusqueda}
-            placeholder={actual.busqueda}
-            placeholderTextColor="#9A7952"
-            style={styles.searchInput}
-          />
+          <TextInput value={busqueda} onChangeText={setBusqueda} placeholder={actual.busqueda} placeholderTextColor="#9A7952" style={styles.searchInput as any} />
         </View>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filtersScroll} contentContainerStyle={styles.filtersContainer}>
           {actual.filtros.map(opcion => (
-            <Pressable
-              key={opcion.valor}
-              style={[styles.filterButton, filtro === opcion.valor && styles.filterButtonActive]}
-              onPress={() => setFiltro(opcion.valor)}
-            >
-              <Text style={[styles.filterText, filtro === opcion.valor && styles.filterTextActive]}>
-                {opcion.texto}
-              </Text>
+            <Pressable key={opcion.valor} style={[styles.filterButton, filtro === opcion.valor && styles.filterButtonActive]} onPress={() => setFiltro(opcion.valor)}>
+              <Text style={[styles.filterText, filtro === opcion.valor && styles.filterTextActive]}>{opcion.texto}</Text>
             </Pressable>
           ))}
         </ScrollView>
@@ -175,22 +111,16 @@ function CategoriaScreen() {
             <View style={styles.productsGrid}>
               {productosDeCategoria.map(producto => (
                 <View key={producto.id} style={styles.productCard}>
-                  <View style={styles.productImageContainer}>
-                    <Image source={{ uri: producto.imagen }} style={styles.productImage} />
-                  </View>
-                  <Pressable style={styles.favoriteButton} onPress={() => cambiarFavorito(producto.id)}>
-                    <Text style={[styles.favoriteText, favoritos.includes(producto.id) && styles.favoriteActive]}>
-                      {favoritos.includes(producto.id) ? '♥' : '♡'}
-                    </Text>
+                  <View style={styles.productImageContainer}><Image source={{ uri: producto.imagen }} style={styles.productImage} /></View>
+                  <Pressable style={styles.favoriteButton} onPress={() => setFavoritos(prev => prev.includes(producto.id) ? prev.filter(id => id !== producto.id) : [...prev, producto.id])}>
+                    <Text style={[styles.favoriteText, favoritos.includes(producto.id) && styles.favoriteActive]}>{favoritos.includes(producto.id) ? '♥' : '♡'}</Text>
                   </Pressable>
                   <View style={styles.productInfo}>
                     <Text style={styles.productName} numberOfLines={1}>{producto.nombre}</Text>
                     <Text style={styles.productDescription} numberOfLines={2}>{producto.descripcion}</Text>
                     <View style={styles.productBottom}>
                       <Text style={styles.productPrice}>${producto.precio}</Text>
-                      <Pressable style={styles.addButton} onPress={() => agregarAlCarrito(producto)}>
-                        <Text style={styles.addButtonText}>+ Agregar</Text>
-                      </Pressable>
+                      <Pressable style={styles.addButton} onPress={() => agregarAlCarrito(producto)}><Text style={styles.addButtonText}>+ Agregar</Text></Pressable>
                     </View>
                   </View>
                 </View>
@@ -199,29 +129,31 @@ function CategoriaScreen() {
           )}
         </ScrollView>
       </View>
+
+      <CartIsland />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, flexDirection: 'row', backgroundColor: '#FFF8E8' },
+  container: { flex: 1, flexDirection: 'row', backgroundColor: '#FFF8E8', position: 'relative' },
   sidebar: { width: 190, backgroundColor: '#FFF1C9', paddingVertical: 24, paddingHorizontal: 14, borderRightWidth: 1, borderRightColor: '#E4C98D' },
   logoContainer: { alignItems: 'center', marginBottom: 30 },
-  logoImage: { width: 70, height: 70, resizeMode: 'contain' },
+  logoImage: { width: 70, height: 70 },
   logoText: { marginTop: 5, fontSize: 13, fontWeight: '900', color: '#754D25', textAlign: 'center' },
   sidebarButton: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 10, borderRadius: 14, marginBottom: 8 },
   sidebarButtonActive: { backgroundColor: '#E5BD63' },
-  sidebarImage: { width: 34, height: 34, resizeMode: 'contain', marginRight: 10 },
+  sidebarImage: { width: 34, height: 34, marginRight: 10 },
   sidebarText: { fontSize: 14, fontWeight: '700', color: '#79552E' },
   sidebarTextActive: { color: '#FFFFFF' },
   mainContent: { flex: 1, minWidth: 0, paddingHorizontal: 28, paddingTop: 24 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#E9C66B', borderRadius: 22, paddingHorizontal: 24, paddingVertical: 15, marginBottom: 18 },
   headerSmall: { fontSize: 11, fontWeight: '800', color: '#765126', letterSpacing: 1 },
   headerTitle: { fontSize: 28, fontWeight: '900', color: '#603C19', marginTop: 2 },
-  headerImage: { width: 72, height: 72, resizeMode: 'contain' },
+  headerImage: { width: 72, height: 72 },
   searchContainer: { height: 46, backgroundColor: '#FFFFFF', borderRadius: 14, borderWidth: 1, borderColor: '#E1C98F', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, marginBottom: 15 },
   searchIcon: { fontSize: 18, marginRight: 8 },
-  searchInput: { flex: 1, fontSize: 15, color: '#603C19', outlineStyle: 'none' } as any,
+  searchInput: { flex: 1, fontSize: 15, color: '#603C19' },
   filtersScroll: { flexGrow: 0, marginBottom: 15 },
   filtersContainer: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: 10 },
   filterButton: { paddingVertical: 9, paddingHorizontal: 18, borderRadius: 22, backgroundColor: '#F6E9CA', borderWidth: 1, borderColor: '#D8B873' },
@@ -229,11 +161,11 @@ const styles = StyleSheet.create({
   filterText: { fontSize: 14, fontWeight: '700', color: '#765126' },
   filterTextActive: { color: '#FFFFFF' },
   productsScroll: { flex: 1 },
-  productsContainer: { paddingBottom: 120 },
+  productsContainer: { paddingBottom: 150 },
   productsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 18 },
   productCard: { width: 250, backgroundColor: '#FFFFFF', borderRadius: 20, overflow: 'hidden', borderWidth: 1, borderColor: '#E8D4A5', position: 'relative' },
   productImageContainer: { height: 165, backgroundColor: '#F9EED5' },
-  productImage: { width: '100%', height: '100%', resizeMode: 'cover' },
+  productImage: { width: '100%', height: '100%' },
   favoriteButton: { position: 'absolute', top: 10, right: 10, width: 38, height: 38, borderRadius: 20, backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center' },
   favoriteText: { fontSize: 23, color: '#9C7952' },
   favoriteActive: { color: '#D89A42' },
@@ -245,7 +177,7 @@ const styles = StyleSheet.create({
   addButton: { backgroundColor: '#D8A63F', borderRadius: 12, paddingVertical: 8, paddingHorizontal: 12 },
   addButtonText: { color: '#FFFFFF', fontSize: 12, fontWeight: '800' },
   emptyProducts: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 60 },
-  emptyImage: { width: 120, height: 120, resizeMode: 'contain' },
+  emptyImage: { width: 120, height: 120 },
   emptyTitle: { marginTop: 10, fontSize: 20, fontWeight: '900', color: '#65431F' },
   emptyText: { marginTop: 5, fontSize: 13, color: '#967655' },
 });
