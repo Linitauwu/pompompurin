@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { View } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import {
+  NavigationContainer,
+  useNavigationContainerRef,
+} from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 
 import LoginScreen from '../screens/LoginScreen';
@@ -12,7 +15,13 @@ import CartIsland from '../CartIsland';
 const Stack = createStackNavigator();
 
 function AppNavigator() {
+  const navigationRef = useNavigationContainerRef();
   const [currentRouteName, setCurrentRouteName] = useState('Login');
+
+  const actualizarRuta = () => {
+    const routeName = navigationRef.getCurrentRoute()?.name ?? 'Login';
+    setCurrentRouteName(routeName);
+  };
 
   const mostrarIsla =
     currentRouteName !== 'Login' && currentRouteName !== 'Cocina';
@@ -20,10 +29,9 @@ function AppNavigator() {
   return (
     <View style={{ flex: 1 }}>
       <NavigationContainer
-        onStateChange={state => {
-          const route = state?.routes[state.index];
-          setCurrentRouteName(route?.name ?? 'Login');
-        }}
+        ref={navigationRef}
+        onReady={actualizarRuta}
+        onStateChange={actualizarRuta}
       >
         <Stack.Navigator
           initialRouteName="Login"
@@ -36,7 +44,7 @@ function AppNavigator() {
         </Stack.Navigator>
       </NavigationContainer>
 
-      {mostrarIsla ? <CartIsland /> : null}
+      {mostrarIsla && <CartIsland />}
     </View>
   );
 }
