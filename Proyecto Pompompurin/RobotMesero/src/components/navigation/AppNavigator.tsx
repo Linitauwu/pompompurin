@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View } from 'react-native';
 import {
   NavigationContainer,
-  useNavigationContainerRef,
+  useNavigationState,
 } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 
@@ -14,38 +14,36 @@ import CartIsland from '../CartIsland';
 
 const Stack = createStackNavigator();
 
-function AppNavigator() {
-  const navigationRef = useNavigationContainerRef();
-  const [currentRouteName, setCurrentRouteName] = useState('Login');
+function NavigationContent() {
+  const routeName = useNavigationState(state => {
+    const route = state.routes[state.index];
+    return route?.name ?? 'Login';
+  });
 
-  const actualizarRuta = () => {
-    const routeName = navigationRef.getCurrentRoute()?.name ?? 'Login';
-    setCurrentRouteName(routeName);
-  };
-
-  const mostrarIsla =
-    currentRouteName !== 'Login' && currentRouteName !== 'Cocina';
+  const mostrarIsla = routeName === 'Menu' || routeName === 'Categoria';
 
   return (
     <View style={{ flex: 1 }}>
-      <NavigationContainer
-        ref={navigationRef}
-        onReady={actualizarRuta}
-        onStateChange={actualizarRuta}
+      <Stack.Navigator
+        initialRouteName="Login"
+        screenOptions={{ headerShown: false }}
       >
-        <Stack.Navigator
-          initialRouteName="Login"
-          screenOptions={{ headerShown: false }}
-        >
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="Menu" component={MenuScreen} />
-          <Stack.Screen name="Categoria" component={CategoriaScreen} />
-          <Stack.Screen name="Cocina" component={CocinaScreen} />
-        </Stack.Navigator>
-      </NavigationContainer>
+        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="Menu" component={MenuScreen} />
+        <Stack.Screen name="Categoria" component={CategoriaScreen} />
+        <Stack.Screen name="Cocina" component={CocinaScreen} />
+      </Stack.Navigator>
 
-      {mostrarIsla && <CartIsland />}
+      {mostrarIsla ? <CartIsland /> : null}
     </View>
+  );
+}
+
+function AppNavigator() {
+  return (
+    <NavigationContainer>
+      <NavigationContent />
+    </NavigationContainer>
   );
 }
 
