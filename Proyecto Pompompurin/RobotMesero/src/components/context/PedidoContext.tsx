@@ -6,53 +6,80 @@ import React, {
   ReactNode,
 } from 'react';
 
+import { supabase } from '../../lib/supabase';
 import { Pedido } from '../types/pedido';
 
 type PedidoContextType = {
   pedidos: Pedido[];
-  agregarPedido: (pedido: Pedido) => void;
+  agregarPedido: (pedido: Pedido) => Promise<void>;
   actualizarEstado: (
     pedidoId: string,
     nuevoEstado: Pedido['estado']
-  ) => void;
+  ) => Promise<void>;
 };
 
 const PedidoContext = createContext<PedidoContextType | undefined>(undefined);
-const STORAGE_KEY = 'pompompurin_pedidos';
-
-function cargarPedidos(): Pedido[] {
-  if (typeof window === 'undefined') return [];
-
-  try {
-    const guardados = window.localStorage.getItem(STORAGE_KEY);
-    return guardados ? (JSON.parse(guardados) as Pedido[]) : [];
-  } catch (error) {
-    console.error('No se pudieron cargar los pedidos:', error);
-    return [];
-  }
-}
 
 export function PedidoProvider({ children }: { children: ReactNode }) {
-  const [pedidos, setPedidos] = useState<Pedido[]>(cargarPedidos);
+  const [pedidos, setPedidos] = useState<Pedido[]>([]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    let activo = true;
 
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(pedidos));
-    } catch (error) {
-      console.error('No se pudieron guardar los pedidos:', error);
+    const cargarPedidos = async () => {
+      const { data, error } = await supabase
+        .from('pedidos')
+        .select('id, fecha, items, subtotal, impuestos, total, estado')
+        .order('fecha', { ascending: false });
+
+      if (error) {
+        console.error('No se pudieron cargar los pedidos desde Supabase:', error);
+        return;
+      }
+
+      if (activo) setPedidos((data ?? []) as Pedido[]);
+    };
+
+    cargarPedidos();
+
+    return () => {
+      activo = false;
+    };
+  }, []);
+
+  const agregarPedido = async (pedido: Pedido) => {
+    const { error } = await supabase.from('pedidos').insert({
+      id: pedido.id,
+      fecha: pedido.fecha,
+      items: pedido.items,
+      subtotal: pedido.subtotal,
+      impuestos: pedido.impuestos,
+      total: pedido.total,
+      estado: pedido.estado,
+    });
+
+    if (error) {
+      console.error('No se pudo guardar el pedido en Supabase:', error);
+      throw error;
     }
-  }, [pedidos]);
 
-  const agregarPedido = (pedido: Pedido) => {
-    setPedidos(prev => [...prev, pedido]);
+    setPedidos(prev => [pedido, ...prev]);
   };
 
-  const actualizarEstado = (
+  const actualizarEstado = async (
     pedidoId: string,
     nuevoEstado: Pedido['estado']
   ) => {
+    const { error } = await supabase
+      .from('pedidos')
+      .update({ estado: nuevoEstado })
+      .eq('id', pedidoId);
+
+    if (error) {
+      console.error('No se pudo actualizar el pedido en Supabase:', error);
+      throw error;
+    }
+
     setPedidos(prev =>
       prev.map(pedido =>
         pedido.id === pedidoId
